@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 이 파일의 경로를 config.xml에 명시해야 한다. -->
+
+<!-- 이 XML의 구조대로 구현될 클래스의 이름 -->
+<mapper namespace="MemberMapper">
+
+	<!-- Beans 클래스의 객체이름(id)과 클래스이름(type)을 명시한다. -->
+	<resultMap id="member" type="study.jsp.mysite.model.Member">
+		<!-- Beans의 멤버변수(property)이름과 대상 테이블의 컬럼(column)을 연결한다. -->
+		 <result property="id" column="id"/>                 
+		 <result property="name" column="name"/>             
+		 <result property="userId" column="user_id"/>        
+		 <result property="userPw" column="user_pw"/>        
+		 <result property="email" column="email"/>           
+		 <result property="gender" column="gender"/>         
+		 <result property="birthdate" column="birthdate"/>   
+		 <result property="tel" column="tel"/>               
+		 <result property="postcode" column="postcode"/>     
+		 <result property="addr1" column="addr1"/>           
+		 <result property="addr2" column="addr2"/>           
+		 <result property="profileImg" column="profile_img"/>
+		 <result property="regDate" column="reg_date"/>      
+		 <result property="editDate" column="edit_date"/>    
+	</resultMap>
+	
+	<!-- 
+		회원 가입시 아이디 중복 체크
+	 -->
+	<select id="selectChkMemberId" resultType="int" parameterType="study.jsp.mysite.model.Member">
+		SELECT COUNT(*) FROM MEMBER 
+		WHERE USER_ID = #{userId}
+		;
+	</select>
+	
+	<!-- 
+		회원 가입시 이메일 중복 체크
+	 -->
+	<select id="selectChkMemberEmail" resultType="int" parameterType="study.jsp.mysite.model.Member">
+		SELECT COUNT(*) FROM MEMBER 
+		WHERE EMAIL = #{email}
+		;
+	</select>
+	
+	<!-- 
+		회원 가입 
+		유저의 정보 저장
+	 -->
+	<insert id="insertJoinMember" parameterType="study.jsp.mysite.model.Member" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO MEMBER (NAME, USER_ID, USER_PW, EMAIL, GENDER, BIRTHDATE, TEL, POSTCODE, ADDR1, ADDR2, ADDR3, PROFILE_IMG
+		)VALUES(
+			#{name}, #{userId}, PASSWORD(#{userPw}), #{email}, 
+			#{gender}, #{birthdate}, #{tel}, #{postcode}, #{addr1}, #{addr2}, #{addr3}, #{profileImg}
+		);
+	</insert>
+	
+	<!-- 
+		로그인 부분
+		아이디와 비밀번호가 일치하는 회원정보를 조회한다. 
+	-->
+	<select id="selectLoginInfo" parameterType="study.jsp.mysite.model.Member" resultMap="member">
+		SELECT ID, NAME, USER_ID, USER_PW, EMAIL, GENDER, DATE_FORMAT(BIRTHDATE, '%Y-%m-%d') as BIRTHDATE, TEL, POSTCODE, ADDR1, ADDR2, ADDR3, PROFILE_IMG,
+		REG_DATE, EDIT_DATE
+		FROM MEMBER
+		WHERE USER_ID = #{userId} AND USER_PW = PASSWORD(#{userPw})
+		ORDER BY ID DESC
+		LIMIT 0, 1
+		;
+	</select>
+	
+	<!-- 
+		비밀번호를 재설정 하기 위한 update
+	 -->
+	<update id="updateMemberPwByEmail">
+		UPDATE MEMBER SET 
+		USER_PW = PASSWORD(#{userPw})
+		where email = #{email};
+	</update>
+	 
+	<!-- 
+		회원 가입시 이메일 중복 체크
+	 -->
+	<select id="selectMemberPasswordCnt" resultType="int" parameterType="study.jsp.mysite.model.Member">
+		SELECT COUNT(*) FROM MEMBER 
+		WHERE ID = #{id}
+		AND USER_PW = PASSWORD(#{userPw})
+		;
+	</select>
+	<!-- 
+		회원 탈퇴
+	 -->
+	<delete id="deleteMember" parameterType="study.jsp.mysite.model.Member">
+		DELETE FROM member 
+		WHERE ID = #{id}
+		;
+	</delete>
+	
+	<!-- 
+		회원정보 update
+	 -->
+	<update id="updateMember">
+		UPDATE MEMBER SET 
+			NAME = #{name}, 
+			EMAIL = #{email}, 
+			GENDER = #{gender}, 
+			BIRTHDATE = #{birthdate}, 
+			TEL = #{tel}, 
+			POSTCODE = #{postcode}, 
+			ADDR1 = #{addr1}, 
+			ADDR2 = #{addr2}, 
+			ADDR3 = #{addr3}
+			<if test="newUserPw != null and newUserPw != ''">
+				, USER_PW = PASSWORD(#{newUserPw})
+			</if>
+			<choose>
+				<when test="profileImg == ''">
+					,PROFILE_IMG= null
+				</when>
+				<when test="profileImg != null">
+					,PROFILE_IMG = #{profileImg}
+				</when>
+			</choose>
+		where id = #{id};
+	</update>
+	
+	<!-- 
+		일련번호에 의한 회원 정보 조회
+	-->
+	<select id="selectMember" parameterType="study.jsp.mysite.model.Member" resultMap="member">
+		SELECT ID, NAME, USER_ID, USER_PW, EMAIL, GENDER, DATE_FORMAT(BIRTHDATE, '%Y-%m-%d') as BIRTHDATE, TEL, POSTCODE, ADDR1, ADDR2, ADDR3, PROFILE_IMG,
+		REG_DATE, EDIT_DATE
+		FROM MEMBER
+		WHERE id = #{id}
+		;
+	</select>
+</mapper>

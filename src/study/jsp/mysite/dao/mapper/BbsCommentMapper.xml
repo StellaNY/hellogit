@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 이 파일의 경로를 config.xml에 명시해야 한다. -->
+
+<!-- 이 XML의 구조대로 구현될 클래스의 이름 -->
+<mapper namespace="BbsComMapper">
+
+	<!-- Beans 클래스의 객체이름(id)과 클래스이름(type)을 명시한다. -->
+	<resultMap id="bbscom"
+		type="study.jsp.mysite.model.BbsComment">
+		<!-- Beans의 멤버변수(property)이름과 대상 테이블의 컬럼(column)을 연결한다. -->
+		<result property="id" column="id" />
+		<result property="writerName" column="writer_name" />
+		<result property="writerPw" column="writer_pw" />
+		<result property="email" column="email" />
+		<result property="content" column="content" />
+		<result property="regDate" column="reg_date" />
+		<result property="editDate" column="edit_date" />
+		<result property="ipAddress" column="ip_address" />
+		<result property="memberId" column="member_id" />
+		<result property="bbsDocumentId" column="bbs_document_id" />
+	</resultMap>
+	
+	<!-- 덧글 정보 insert -->
+	<insert id="insertComment" parameterType="study.jsp.mysite.model.BbsComment" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO BBS_COMMENT(
+			WRITER_NAME, EMAIL, CONTENT, IP_ADDRESS, BBS_DOCUMENT_ID, MEMBER_ID, WRITER_PW
+		) VALUES(
+		#{writerName}, #{email}, #{content}, #{ipAddress}, #{bbsDocumentId},
+		<choose>
+			<when test="memberId == 0 ">
+				null, password(#{writerPw})
+			</when>
+			<otherwise>
+				#{memberId}, #{writerPw}
+			</otherwise>
+		</choose> 
+		);
+	</insert>
+	
+	<!-- 덧글 하나 조회하기 -->
+	<select id="selectComment" parameterType="study.jsp.mysite.model.BbsComment" resultMap="bbscom">
+		SELECT 
+			ID, WRITER_NAME, EMAIL, CONTENT, IP_ADDRESS, BBS_DOCUMENT_ID, MEMBER_ID, 
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d %H:%i:%s') REG_DATE,
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d %H:%i:%s') EDIT_DATE
+		FROM BBS_COMMENT
+		WHERE ID = #{id}
+	</select>
+
+	<!-- 덧글 목록 조회하기 -->
+	<select id="selectCommentList" parameterType="study.jsp.mysite.model.BbsComment" resultMap="bbscom">
+		SELECT 
+			ID, WRITER_NAME, EMAIL, CONTENT, IP_ADDRESS, BBS_DOCUMENT_ID, MEMBER_ID, 
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d %H:%i:%s') REG_DATE,
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d %H:%i:%s') EDIT_DATE
+		FROM BBS_COMMENT
+		WHERE BBS_DOCUMENT_ID = #{bbsDocumentId}
+		ORDER BY ID ASC
+		<if test="limitStart != null and listCnt != null">
+		LIMIT #{limitStart}, #{listCnt}
+		</if>
+		;
+	</select>
+	
+	<select id="selectCommentCnt" parameterType="study.jsp.mysite.model.BbsComment" resultType="int">
+		SELECT COUNT(ID)
+		FROM BBS_COMMENT
+		WHERE BBS_DOCUMENT_ID = #{bbsDocumentId}
+	</select>
+	
+	<!-- 자신의 덧글인지 검사한다. -->
+	<select id="selectCommentCntByMemberId" parameterType="study.jsp.mysite.model.BbsComment" resultType="int">
+		SELECT COUNT(ID)
+		FROM BBS_COMMENT
+		WHERE ID = #{id}
+		AND MEMBER_ID = #{memberId}
+	</select>
+
+	<!-- 비밀번호를 검사한다. -->
+	<select id="selectCommentCntByPw" parameterType="study.jsp.mysite.model.BbsComment" resultType="int">
+		SELECT COUNT(ID)
+		FROM BBS_COMMENT
+		WHERE ID = #{id}
+		AND WRITER_PW = PASSWORD(#{writerPw})
+	</select>
+	
+	<!-- 덧글 삭제한다. -->
+	<delete id="deleteComment" parameterType="study.jsp.mysite.model.BbsComment">
+		DELETE FROM BBS_COMMENT WHERE ID = #{id}
+	</delete>
+	
+	<!-- 댓글 정보 수정하기 -->
+	<update id="updateComment">
+		UPDATE BBS_COMMENT SET
+			WRITER_NAME = #{writerName},
+			EMAIL = #{email},
+			CONTENT = #{content},
+			IP_ADDRESS = #{ipAddress},
+			edit_date = now()
+		WHERE ID = #{id}
+		;
+	</update>
+</mapper>

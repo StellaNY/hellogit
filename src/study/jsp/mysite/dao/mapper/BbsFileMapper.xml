@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 이 파일의 경로를 config.xml에 명시해야 한다. -->
+
+<!-- 이 XML의 구조대로 구현될 클래스의 이름 -->
+<mapper namespace="BbsFileMapper">
+
+	<!-- Beans 클래스의 객체이름(id)과 클래스이름(type)을 명시한다. -->
+	<resultMap id="bbsfile" type="study.jsp.mysite.model.BbsFile">
+		<!-- Beans의 멤버변수(property)이름과 대상 테이블의 컬럼(column)을 연결한다. -->
+		<result property="id" column="id"/>                        
+		<result property="originName" column="origin_name"/>       
+		<result property="fileDir" column="file_dir"/>             
+		<result property="fileName" column="file_name"/>           
+		<result property="contentType" column="content_type"/>     
+		<result property="fileSize" column="file_size"/>           
+		<result property="regDate" column="reg_date"/>             
+		<result property="editDate" column="edit_date"/>           
+		<result property="bbsDocumentId" column="bbs_document_id"/> 
+	</resultMap>
+	
+	<insert id="insertFile" parameterType="study.jsp.mysite.model.BbsFile" useGeneratedKeys="true" keyProperty="id">
+		
+		INSERT INTO BBS_FILE(
+			ORIGIN_NAME, FILE_DIR, FILE_NAME, CONTENT_TYPE,
+			FILE_SIZE, BBS_DOCUMENT_ID
+		)VALUES(
+			#{originName}, #{fileDir}, #{fileName}, #{contentType},
+			#{fileSize}, #{bbsDocumentId}
+		);
+	</insert>
+	
+	<select id="selectFileList" parameterType="study.jsp.mysite.model.BbsFile" resultMap="bbsfile">
+		SELECT 
+			ID, ORIGIN_NAME, FILE_DIR, FILE_NAME, CONTENT_TYPE,
+			FILE_SIZE, BBS_DOCUMENT_ID, REG_DATE, EDIT_DATE
+		FROM BBS_FILE
+		WHERE BBS_DOCUMENT_ID = #{bbsDocumentId}
+	</select>
+	
+	
+	<select id="selectFile" parameterType="study.jsp.mysite.model.BbsFile" resultMap="bbsfile">
+		SELECT FILE_DIR, FILE_NAM
+		FROM BBS_FILE
+		WHERE ID = #{id}
+	</select>
+	
+	<delete id="deleteFile" parameterType="study.jsp.mysite.model.BbsFile">
+		DELETE FROM BBS_FILE WHERE ID = #{id}
+	</delete>
+	
+</mapper>

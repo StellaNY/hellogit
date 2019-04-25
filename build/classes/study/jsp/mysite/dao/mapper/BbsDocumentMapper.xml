@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 이 파일의 경로를 config.xml에 명시해야 한다. -->
+
+<!-- 이 XML의 구조대로 구현될 클래스의 이름 -->
+<mapper namespace="BbsDocMapper">
+
+	<!-- Beans 클래스의 객체이름(id)과 클래스이름(type)을 명시한다. -->
+	<resultMap id="bbsdoc" type="study.jsp.mysite.model.BbsDocument">
+		<!-- Beans의 멤버변수(property)이름과 대상 테이블의 컬럼(column)을 연결한다. -->
+		<result property="id" column="id"/>                 
+		<result property="category" column="category"/>     
+		<result property="writerName" column="writer_name"/>
+		<result property="writerPw" column="writer_pw"/>    
+		<result property="email" column="email"/>           
+		<result property="subject" column="subject"/>       
+		<result property="content" column="content"/>       
+		<result property="hit" column="hit"/>               
+		<result property="regDate" column="reg_date"/>      
+		<result property="editDate" column="edit_date"/>    
+		<result property="ipAddress" column="ip_address"/>  
+		<result property="memberId" column="member_id"/>    
+		<result property="imagePath" column="image_path"/>    
+	</resultMap>
+	
+	<!-- 게시물 저장 -->
+	<insert id="insertDocument" parameterType="study.jsp.mysite.model.BbsDocument" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO BBS_DOCUMENT(
+			CATEGORY, WRITER_NAME, EMAIL, SUBJECT, CONTENT, HIT,
+			IP_ADDRESS, MEMBER_ID, WRITER_PW
+		)VALUES(
+			#{category}, #{writerName}, #{email}, #{subject}, #{content}, #{hit}, 
+			#{ipAddress},
+			<choose>
+				<when test="memberId == 0">
+					null, password(#{writerPw})
+				</when>
+				<otherwise>
+					#{memberId}, #{writerPw}
+				</otherwise>
+			</choose>
+		);
+	</insert>
+	
+	<!-- 게시글 조회 -->
+	<select id="selectDocument" parameterType="study.jsp.mysite.model.BbsDocument" resultMap="bbsdoc">
+		SELECT 
+			ID, CATEGORY, WRITER_NAME, WRITER_PW, EMAIL, SUBJECT, CONTENT, HIT,
+			IP_ADDRESS, MEMBER_ID, WRITER_PW, 
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d') AS REG_DATE, 
+			DATE_FORMAT(EDIT_DATE, '%Y-%m-%d') AS EDIT_DATE
+		FROM BBS_DOCUMENT
+		WHERE CATEGORY = #{category}
+		AND ID = #{id}
+	</select>
+	
+	<!-- 게시판 목록 조회 -->
+	<select id="selectDocumentList" parameterType="study.jsp.mysite.model.BbsDocument" resultMap="bbsdoc">
+		SELECT 
+			ID, CATEGORY, WRITER_NAME, WRITER_PW, EMAIL, SUBJECT, CONTENT, HIT,
+			IP_ADDRESS, MEMBER_ID, WRITER_PW, 
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d') AS REG_DATE, 
+			DATE_FORMAT(EDIT_DATE, '%Y-%m-%d') AS EDIT_DATE
+			<if test="gallery == true">
+				,(	SELECT 
+					CONCAT(FILE_DIR, '/', FILE_NAME) FROM BBS_FILE
+					WHERE BBS_DOCUMENT_ID = BBS_DOCUMENT.ID
+					AND CONTENT_TYPE LIKE ('image/%')
+					ORDER BY ID ASC LIMIT 0, 1
+				) AS IMAGE_PATH
+			</if>
+		FROM BBS_DOCUMENT
+		<where>
+			CATEGORY = #{category}
+			
+			<if test = "subject != null and content != null ">
+				and(
+					<if test = "subject != null and subject != ''">
+						subject like concat('%', #{subject}, '%')
+					</if>
+					<if test = "content != null and content != ''">
+						or content like concat('%', #{content}, '%')
+					</if>
+				)
+			</if>
+		</where>
+		ORDER BY id DESC
+
+		<if test="limitStart != null and listCnt != null">
+		LIMIT #{limitStart}, #{listCnt}
+		</if>
+	</select>
+	
+	<!-- 
+		이전글 정보를 조회
+		- 현재 글보다 글 번호 값이 작은 데이터를 내림차순으로 정렬한 후, 
+		첫 번째 데이터만 추출
+		
+		크기에 대한 비교연산자는 XML 문법에 어긋나므로, 특수먼자 형태로 표현해야 된다.
+		&lt; = < / &gt; = >
+	 -->
+	<select id="selectPrevDocument" parameterType="study.jsp.mysite.model.BbsDocument" resultMap="bbsdoc">
+		SELECT 
+			ID, CATEGORY, WRITER_NAME, WRITER_PW, EMAIL, SUBJECT, CONTENT, HIT,
+			IP_ADDRESS, MEMBER_ID, WRITER_PW, 
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d') AS REG_DATE, 
+			DATE_FORMAT(EDIT_DATE, '%Y-%m-%d') AS EDIT_DATE
+		FROM BBS_DOCUMENT
+		WHERE CATEGORY = #{category}
+		AND ID &lt; #{id}
+		ORDER BY id DESC
+		LIMIT 0, 1
+	</select>
+	
+	<!-- 
+		다음글 정보를 조회
+		- 현재 글보다 글 번호 값이 큰 데이터를 내림차순으로 정렬한 후, 
+		첫 번째 데이터만 추출
+		
+		크기에 대한 비교연산자는 XML 문법에 어긋나므로, 특수먼자 형태로 표현해야 된다.
+		&lt; = < / &gt; = >
+	 -->
+	<select id="selectNextDocument" parameterType="study.jsp.mysite.model.BbsDocument" resultMap="bbsdoc">
+		SELECT 
+			ID, CATEGORY, WRITER_NAME, WRITER_PW, EMAIL, SUBJECT, CONTENT, HIT,
+			IP_ADDRESS, MEMBER_ID, WRITER_PW, 
+			DATE_FORMAT(REG_DATE, '%Y-%m-%d') AS REG_DATE, 
+			DATE_FORMAT(EDIT_DATE, '%Y-%m-%d') AS EDIT_DATE
+		FROM BBS_DOCUMENT
+		WHERE CATEGORY = #{category}
+		AND ID &gt; #{id}
+		ORDER BY id ASC
+		LIMIT 0, 1
+	</select>
+	
+	<!-- 조회수 1 증가 -->
+	<update id="updateDocumentHit" parameterType="study.jsp.mysite.model.BbsDocument">
+		UPDATE BBS_DOCUMENT SET
+		HIT = HIT+1
+		WHERE CATEGORY = #{category}
+		AND ID = #{id}
+	</update>
+	
+	<!-- 페이징을 위한 전체 게시물 수를 조회 -->
+	<select id="selectDocumentCnt" parameterType="study.jsp.mysite.model.BbsDocument" resultType="int">
+		SELECT 
+			COUNT(ID)
+		FROM BBS_DOCUMENT
+		<where>
+			CATEGORY = #{category}
+			
+			<if test = "subject != null and content != null ">
+				and(
+					<if test = "subject != null and subject != ''">
+						subject like concat('%', #{subject}, '%')
+					</if>
+					<if test = "content != null and content != ''">
+						or content like concat('%', #{content}, '%')
+					</if>
+				)
+			</if>
+		</where>
+	</select>
+	
+	<!-- 게시물 삭제 -->
+		<!-- 자신의 게시물인지 검사한다. -->
+		<select id="selectDocumentCntByMemberId" parameterType="study.jsp.mysite.model.BbsDocument" resultType="int">
+			SELECT COUNT(ID) FROM BBS_DOCUMENT
+			WHERE CATEGORY = #{category}
+			AND ID = #{id}
+			AND MEMBER_ID = #{memberId}
+		</select>
+		
+		<!--  자신의 게시물이 아닌경우 비밀번호를 검사한다. -->
+		<select id="selectDocumentCntByPw" parameterType="study.jsp.mysite.model.BbsDocument" resultType="int">
+			SELECT COUNT(ID) FROM BBS_DOCUMENT
+			WHERE CATEGORY = #{category}
+			AND ID = #{id}
+			AND WRITER_PW = password(#{writerPw})
+		</select>
+		
+		<!-- 게시물을 삭제한다. -->
+		<delete id="deleteDocument" parameterType="study.jsp.mysite.model.BbsDocument">
+			Delete FROM BBS_DOCUMENT
+			WHERE ID = #{id}
+		</delete>
+		
+		<!-- 게시글에 속한 파일 전체 삭제 -->
+		<delete id="deleteFileAll" parameterType="study.jsp.mysite.model.BbsDocument">
+			Delete FROM BBS_FILE
+			WHERE BBS_DOCUMENT_ID = #{bbsDocumentId}
+		</delete>
+		
+	<!-- 게시물 정보 수정하기 -->
+	<update id="updateDocument" parameterType="study.jsp.mysite.model.BbsDocument">
+		UPDATE BBS_DOCUMENT SET
+			WRITER_NAME = #{writerName},
+			EMAIL = #{email},
+			SUBJECT = #{subject},
+			CONTENT = #{content},
+			IP_ADDRESS = #{ipAddress}
+		WHERE CATEGORY = #{category} 
+		AND ID = #{id}
+	</update>
+</mapper>
