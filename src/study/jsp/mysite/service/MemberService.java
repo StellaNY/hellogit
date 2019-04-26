@@ -3,9 +3,16 @@ package study.jsp.mysite.service;
 import study.jsp.mysite.model.Member;
 
 /**
- * Member관련 service
  * 
- * @author "StellaNY (stella10137@gmail.com)"
+ * <pre>
+ * @Project : mysite
+ * @PackageNm : study.jsp.mysite.service
+ * </pre>
+ * 
+ * @FileName : MemberService.java
+ * @author : "StellaNY (stella10137@gmail.com)"
+ * @Description : Member Service 계층
+ * @Date : 2019-04-26
  *
  */
 public interface MemberService {
